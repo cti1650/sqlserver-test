@@ -131,6 +131,51 @@ TrustServerCertificate=True;
 
 ---
 
+## Excel VBA からの接続サンプル
+
+```vba
+Sub ConnectToSQLServer()
+    Dim conn As Object
+    Set conn = CreateObject("ADODB.Connection")
+
+    conn.Open "Provider=MSOLEDBSQL;" & _
+              "Server=localhost,1433;" & _
+              "Database=AppDB;" & _
+              "User ID=app_user;" & _
+              "Password=AppUserP@ss123!;" & _
+              "Encrypt=Yes;" & _
+              "TrustServerCertificate=Yes;"
+
+    ' SELECT例
+    Dim rs As Object
+    Set rs = conn.Execute("SELECT * FROM Sample")
+
+    ' 結果をシートに出力
+    Sheet1.Range("A1").CopyFromRecordset rs
+
+    rs.Close
+    conn.Close
+End Sub
+```
+
+---
+
+## Access ODBC設定手順
+
+1. 「ODBCデータソース(64bit)」を開く
+2. 「システムDSN」タブ → 「追加」
+3. 「ODBC Driver 18 for SQL Server」を選択
+4. 以下を入力:
+   - 名前: `SQLServerTest`
+   - サーバー: `localhost,1433`
+5. 「SQL Server認証」を選択
+   - ログインID: `app_user`
+   - パスワード: `AppUserP@ss123!`
+6. 「既定のデータベース」→ `AppDB`
+7. 「接続の暗号化」→ 必須、「サーバー証明書を信頼する」→ ON
+
+---
+
 ## この構成でできること
 
 - SQL Server 接続確認
