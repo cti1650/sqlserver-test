@@ -37,6 +37,7 @@ make start    # 再開
 make restart  # 再起動
 make down     # 停止（データ保持）
 make clean    # 完全削除
+make purge    # 完全削除+イメージ削除
 make reset    # リセット（削除→再起動）
 make shell    # コンテナにbash接続
 make test     # SQL Server接続テスト

@@ -1,4 +1,4 @@
-.PHONY: help up down start stop restart logs ps clean reset init sql shell test
+.PHONY: help up down start stop restart logs ps clean purge reset init sql shell test
 
 # 環境変数（デフォルト値付き）
 SA_PASSWORD ?= P@ssw0rd123!
@@ -18,6 +18,7 @@ help:
 	@echo "  logs     - ログ表示"
 	@echo "  ps       - コンテナ状態確認"
 	@echo "  clean    - コンテナ+ボリューム完全削除"
+	@echo "  purge    - clean + イメージ削除"
 	@echo "  reset    - clean + up（完全リセット）"
 	@echo "  init     - DDL流し込み"
 	@echo "  sql      - sqlcmdでDB接続"
@@ -55,6 +56,10 @@ ps:
 # 完全削除（コンテナ+ボリューム+ネットワーク）
 clean:
 	docker compose down -v --remove-orphans
+
+# 完全削除+イメージ削除
+purge: clean
+	docker rmi mcr.microsoft.com/mssql/server:2022-latest dbeaver/cloudbeaver:latest 2>/dev/null || true
 
 # 完全リセット（削除して再起動）
 reset: clean up
