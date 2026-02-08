@@ -15,15 +15,41 @@ ADO / VBA / SSMS での動作検証を目的とした
 .
 ├── docker-compose.yml
 ├── ddl.sql
+├── Makefile
 └── README.md
 ```
 
 ---
 
-## 起動
+## Makeコマンド
 
 ```bash
-docker compose up -d
+make help     # コマンド一覧
+make up       # コンテナ起動
+make init     # DDL流し込み
+make sql      # DB接続（sqlcmd）
+make logs     # ログ確認
+make stop     # 一時停止
+make start    # 再開
+make restart  # 再起動
+make down     # 停止（データ保持）
+make clean    # 完全削除
+make reset    # リセット（削除→再起動）
+make shell    # コンテナにbash接続
+```
+
+### 初回セットアップ
+
+```bash
+make up       # コンテナ起動（初回はイメージ取得で時間がかかる）
+sleep 15      # SQL Server起動待ち
+make init     # DDL流し込み
+```
+
+### 検証が終わったら
+
+```bash
+make clean    # 完全削除（ボリュームも削除）
 ```
 
 ---
@@ -93,10 +119,3 @@ TrustServerCertificate=True;
 
 ---
 
-## 検証が終わったら
-
-```bash
-docker compose down -v
-```
-
-→ **全部消える（それでOK）**
