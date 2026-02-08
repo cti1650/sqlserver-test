@@ -1,5 +1,8 @@
 .PHONY: help up down start stop restart logs ps clean reset init sql shell test
 
+# 環境変数（デフォルト値付き）
+SA_PASSWORD ?= P@ssw0rd123!
+
 # デフォルトターゲット
 help:
 	@echo "SQL Server Test Environment"
@@ -63,7 +66,7 @@ init:
 	@echo "Applying DDL..."
 	docker exec -i sqlserver-test \
 		/opt/mssql-tools18/bin/sqlcmd \
-		-S localhost -U sa -P 'P@ssw0rd123!' \
+		-S localhost -U sa -P '$(SA_PASSWORD)' \
 		-C -i /dev/stdin < ddl.sql
 	@echo "DDL applied successfully."
 
@@ -71,7 +74,7 @@ init:
 sql:
 	docker exec -it sqlserver-test \
 		/opt/mssql-tools18/bin/sqlcmd \
-		-S localhost -U sa -P 'P@ssw0rd123!' \
+		-S localhost -U sa -P '$(SA_PASSWORD)' \
 		-C -d AppDB
 
 # コンテナにbash接続
@@ -83,7 +86,7 @@ test:
 	@echo "Testing SQL Server connection..."
 	@docker exec sqlserver-test \
 		/opt/mssql-tools18/bin/sqlcmd \
-		-S localhost -U sa -P 'P@ssw0rd123!' \
+		-S localhost -U sa -P '$(SA_PASSWORD)' \
 		-C -Q "SELECT @@VERSION AS 'SQL Server Version'" \
 		&& echo "" && echo "✓ SQL Server is running and accessible." \
 		|| (echo "✗ Failed to connect to SQL Server." && exit 1)

@@ -4,8 +4,8 @@ services:
     container_name: sqlserver-test
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "P@ssw0rd123!"
-      MSSQL_PID: "Developer"
+      SA_PASSWORD: ${SA_PASSWORD:-P@ssw0rd123!}
+      MSSQL_PID: ${MSSQL_PID:-Developer}
     ports:
       - "127.0.0.1:1433:1433"
     volumes:
@@ -18,7 +18,12 @@ services:
       - "127.0.0.1:8978:8978"
     volumes:
       - cloudbeaver_data:/opt/cloudbeaver/workspace
-      - ./cloudbeaver-config/data-sources.json:/opt/cloudbeaver/workspace/GlobalConfiguration/.dbeaver/data-sources.json:ro
+      - ./cloudbeaver-config/initial-data-sources.conf:/opt/cloudbeaver/conf/initial-data-sources.conf:ro
+    environment:
+      CB_SERVER_NAME: ${CB_SERVER_NAME:-SQL Server Test}
+      CB_ADMIN_NAME: ${CB_ADMIN_NAME:-cbadmin}
+      CB_ADMIN_PASSWORD: ${CB_ADMIN_PASSWORD:-P@ssw0rd123!}
+      CLOUDBEAVER_APP_GRANT_CONNECTIONS_ACCESS_TO_ANONYMOUS_TEAM: "true"
     depends_on:
       - mssql
 

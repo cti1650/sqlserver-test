@@ -16,7 +16,10 @@ ADO / VBA / SSMS での動作検証を目的とした
 ├── docker-compose.yml
 ├── ddl.sql
 ├── Makefile
-└── README.md
+├── README.md
+├── .env.example
+└── cloudbeaver-config/
+    └── initial-data-sources.conf
 ```
 
 ---
@@ -36,6 +39,7 @@ make down     # 停止（データ保持）
 make clean    # 完全削除
 make reset    # リセット（削除→再起動）
 make shell    # コンテナにbash接続
+make test     # SQL Server接続テスト
 ```
 
 ### 初回セットアップ
@@ -43,6 +47,7 @@ make shell    # コンテナにbash接続
 ```bash
 make up       # コンテナ起動（初回はイメージ取得で時間がかかる）
 sleep 15      # SQL Server起動待ち
+make test     # 接続確認
 make init     # DDL流し込み
 ```
 
@@ -64,6 +69,32 @@ make clean    # 完全削除（ボリュームも削除）
 | Password | P@ssw0rd123! |
 | Encrypt | ON |
 | TrustServerCertificate | ON |
+
+---
+
+## CloudBeaver（Webクライアント）
+
+ブラウザからSQL Serverを操作できるWebクライアントが同梱されています。
+
+### アクセス
+
+- URL: http://localhost:8978
+- 管理者: `cbadmin` / `P@ssw0rd123!`
+
+### 初回の接続設定
+
+1. 上記URLにアクセスしてログイン
+2. 左上メニュー → 「Connection」→「New Connection」
+3. 「SQL Server」を選択
+4. 以下を入力:
+   - Host: `mssql`
+   - Port: `1433`
+   - Database: `master`
+   - User: `sa`
+   - Password: `P@ssw0rd123!`
+5. 「Create」で保存
+
+※ 一度作成すれば、ボリュームに保存されるため次回以降は自動表示されます
 
 ---
 
@@ -106,6 +137,24 @@ TrustServerCertificate=True;
 - identity / datetime2 / NULL の挙動確認
 - トランザクション検証
 - sa / 一般ユーザー差分の体験
+
+---
+
+## 環境変数でのカスタマイズ
+
+`.env.example`をコピーして`.env`を作成し、設定を変更できます。
+
+```bash
+cp .env.example .env
+```
+
+| 変数 | デフォルト値 | 説明 |
+|------|-------------|------|
+| SA_PASSWORD | P@ssw0rd123! | SQL Server saパスワード |
+| MSSQL_PID | Developer | SQL Serverエディション |
+| CB_SERVER_NAME | SQL Server Test | CloudBeaverサーバー名 |
+| CB_ADMIN_NAME | cbadmin | CloudBeaver管理者名 |
+| CB_ADMIN_PASSWORD | P@ssw0rd123! | CloudBeaver管理者パスワード |
 
 ---
 
