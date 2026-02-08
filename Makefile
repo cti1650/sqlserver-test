@@ -1,4 +1,4 @@
-.PHONY: help up down start stop restart logs ps clean reset init sql shell
+.PHONY: help up down start stop restart logs ps clean reset init sql shell test
 
 # デフォルトターゲット
 help:
@@ -19,6 +19,7 @@ help:
 	@echo "  init     - DDL流し込み"
 	@echo "  sql      - sqlcmdでDB接続"
 	@echo "  shell    - コンテナにbash接続"
+	@echo "  test     - SQL Server接続テスト"
 
 # コンテナ起動
 up:
@@ -76,3 +77,13 @@ sql:
 # コンテナにbash接続
 shell:
 	docker exec -it sqlserver-test /bin/bash
+
+# SQL Server接続テスト
+test:
+	@echo "Testing SQL Server connection..."
+	@docker exec sqlserver-test \
+		/opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P 'P@ssw0rd123!' \
+		-C -Q "SELECT @@VERSION AS 'SQL Server Version'" \
+		&& echo "" && echo "✓ SQL Server is running and accessible." \
+		|| (echo "✗ Failed to connect to SQL Server." && exit 1)
