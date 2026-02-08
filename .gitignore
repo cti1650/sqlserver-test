@@ -1,0 +1,14 @@
+# Docker volumes
+mssql_data/
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
