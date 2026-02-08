@@ -134,7 +134,7 @@ TrustServerCertificate=True;
 ## Excel VBA からの接続サンプル
 
 ```vba
-Sub ConnectToSQLServer()
+Sub GetCustomerList()
     Dim conn As Object
     Set conn = CreateObject("ADODB.Connection")
 
@@ -146,11 +146,38 @@ Sub ConnectToSQLServer()
               "Encrypt=Yes;" & _
               "TrustServerCertificate=Yes;"
 
-    ' SELECT例
+    ' 顧客マスタ取得
     Dim rs As Object
-    Set rs = conn.Execute("SELECT * FROM Sample")
+    Set rs = conn.Execute("SELECT CustomerCode, CustomerName, Tel FROM M_Customer WHERE IsActive = 1")
 
     ' 結果をシートに出力
+    Sheet1.Range("A1").CopyFromRecordset rs
+
+    rs.Close
+    conn.Close
+End Sub
+
+Sub GetSalesWithDetails()
+    Dim conn As Object
+    Set conn = CreateObject("ADODB.Connection")
+
+    conn.Open "Provider=MSOLEDBSQL;" & _
+              "Server=localhost,1433;" & _
+              "Database=AppDB;" & _
+              "User ID=app_user;" & _
+              "Password=AppUserP@ss123!;" & _
+              "Encrypt=Yes;" & _
+              "TrustServerCertificate=Yes;"
+
+    ' 売上明細を取得（ヘッダと結合）
+    Dim sql As String
+    sql = "SELECT h.SalesNo, h.SalesDate, d.ProductName, d.Quantity, d.Amount " & _
+          "FROM T_Sales h INNER JOIN T_SalesDetail d ON h.SalesId = d.SalesId " & _
+          "ORDER BY h.SalesNo, d.RowNo"
+
+    Dim rs As Object
+    Set rs = conn.Execute(sql)
+
     Sheet1.Range("A1").CopyFromRecordset rs
 
     rs.Close
