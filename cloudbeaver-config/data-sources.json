@@ -1,0 +1,33 @@
+{
+    "folders": {},
+    "connections": {
+        "sqlserver-test": {
+            "provider": "sqlserver",
+            "driver": "sqlserver:microsoft",
+            "name": "SQL Server (mssql)",
+            "save-password": true,
+            "configuration": {
+                "host": "mssql",
+                "port": "1433",
+                "database": "master",
+                "url": "jdbc:sqlserver://mssql:1433;databaseName=master;encrypt=false;trustServerCertificate=true",
+                "configurationType": "URL",
+                "type": "dev",
+                "auth-model": "native",
+                "user": "sa",
+                "password": "P@ssw0rd123!"
+            }
+        }
+    },
+    "connection-types": {
+        "dev": {
+            "name": "Development",
+            "color": "255,255,255",
+            "description": "Regular development database",
+            "auto-commit": true,
+            "confirm-execute": false,
+            "confirm-data-change": false,
+            "auto-close-transactions": false
+        }
+    }
+}
