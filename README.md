@@ -115,6 +115,16 @@ docker exec -i sqlserver-test \
   -C -i /dev/stdin < ddl.sql
 ```
 
+```bash
+docker exec -i sqlserver-test `
+  /opt/mssql-tools18/bin/sqlcmd `
+  -S localhost `
+  -U sa `
+  -P "P@ssw0rd123!" `
+  -C `
+  -i ddl.sql
+```
+
 ---
 
 ## ADO 検証用 接続文字列（例）
