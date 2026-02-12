@@ -15,7 +15,9 @@ ADO / VBA / SSMS での動作検証を目的とした
 .
 ├── docker-compose.yml
 ├── ddl.sql
-├── Makefile
+├── Makefile           # Linux/Mac用
+├── package.json       # クロスプラットフォーム用
+├── scripts/           # npm scripts用ヘルパー
 ├── README.md
 ├── .env.example
 └── cloudbeaver-config/
@@ -43,7 +45,48 @@ make shell    # コンテナにbash接続
 make test     # SQL Server接続テスト
 ```
 
-### 初回セットアップ
+---
+
+## npm scripts（クロスプラットフォーム）
+
+Windows / Linux / Mac で共通して使用できます。Node.js が必要です。
+
+```bash
+npm run up              # コンテナ起動（mssqlのみ）
+npm run down            # コンテナ停止
+npm run clean           # 完全削除
+npm run wait            # SQL Server起動待ち
+npm run init            # DDL流し込み
+npm run test:connection # 接続テスト
+npm run test:tables     # テーブル確認
+npm run test:data       # データ確認
+npm run test            # 全テスト実行（up → wait → init → verify）
+npm run ci              # CI用（テスト後にクリーンアップ）
+```
+
+### 初回セットアップ（npm）
+
+```bash
+npm run up      # コンテナ起動
+npm run wait    # SQL Server起動待ち
+npm run init    # DDL流し込み
+```
+
+### 対話型コマンド
+
+npm scriptsでは対話型コマンドに制限があるため、以下は直接実行してください：
+
+```bash
+# sqlcmdでDB接続
+docker exec -it sqlserver-test /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'P@ssw0rd123!' -C -d AppDB
+
+# コンテナにbash接続
+docker exec -it sqlserver-test /bin/bash
+```
+
+---
+
+### 初回セットアップ（make）
 
 ```bash
 make up       # コンテナ起動（初回はイメージ取得で時間がかかる）
