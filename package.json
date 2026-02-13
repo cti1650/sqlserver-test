@@ -8,6 +8,7 @@
     "down": "docker compose down",
     "clean": "docker compose down -v --remove-orphans",
     "wait": "node scripts/wait-for-sqlserver.js",
+    "detect": "node scripts/detect-env.js",
     "init": "node scripts/apply-ddl.js",
     "test:connection": "node scripts/test-connection.js",
     "test:tables": "node scripts/verify-tables.js",

@@ -14,10 +14,15 @@ ADO / VBA / SSMS での動作検証を目的とした
 ```
 .
 ├── docker-compose.yml
-├── ddl.sql
-├── Makefile           # Linux/Mac用
-├── package.json       # クロスプラットフォーム用
-├── scripts/           # npm scripts用ヘルパー
+├── ddl/                    # 分割DDL
+│   ├── 01-database.sql     # DB作成（Azure SQL DB以外）
+│   ├── 02-tables.sql       # テーブル定義
+│   ├── 03-data.sql         # サンプルデータ
+│   ├── 04-users-onprem.sql # ユーザー（オンプレ/RDS用）
+│   └── 04-users-azure.sql  # ユーザー（Azure SQL DB用）
+├── Makefile                # Linux/Mac用
+├── package.json            # クロスプラットフォーム用
+├── scripts/                # npm scripts用ヘルパー
 ├── README.md
 ├── .env.example
 └── cloudbeaver-config/
@@ -112,6 +117,22 @@ npm run init
 | SQL_USER | sa | ユーザー名 |
 | SQL_PASSWORD | P@ssw0rd123! | パスワード |
 | SQL_DATABASE | AppDB | データベース名 |
+### 環境自動検出
+
+`npm run init` は接続先のSQL Server環境を自動検出し、適切なDDLファイルを選択します。
+
+```bash
+# 環境を確認
+npm run detect
+```
+
+| 環境 | 実行されるDDL | 備考 |
+|------|--------------|------|
+| Azure SQL Database | 02, 03, 04-azure | CREATE DATABASE/LOGIN除外 |
+| Azure SQL Managed Instance | 01, 02, 03, 04-onprem | フルDDL |
+| AWS RDS / ローカル / Express | 01, 02, 03, 04-onprem | フルDDL |
+
+DDLは `ddl/` 配下に分割されており、環境に応じて必要なファイルのみ実行されます。
 
 ---
 

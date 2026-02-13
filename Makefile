@@ -69,10 +69,13 @@ reset: clean up
 # DDL流し込み
 init:
 	@echo "Applying DDL..."
-	docker exec -i sqlserver-test \
-		/opt/mssql-tools18/bin/sqlcmd \
-		-S localhost -U sa -P '$(SA_PASSWORD)' \
-		-C -i /dev/stdin < ddl.sql
+	@for f in ddl/01-database.sql ddl/02-tables.sql ddl/03-data.sql ddl/04-users-onprem.sql; do \
+		echo "Applying $$f..."; \
+		docker exec -i sqlserver-test \
+			/opt/mssql-tools18/bin/sqlcmd \
+			-S localhost -U sa -P '$(SA_PASSWORD)' \
+			-C -i /dev/stdin < $$f; \
+	done
 	@echo "DDL applied successfully."
 
 # sqlcmdでDB接続
