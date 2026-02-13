@@ -84,6 +84,35 @@ docker exec -it sqlserver-test /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa 
 docker exec -it sqlserver-test /bin/bash
 ```
 
+### 外部サーバーへの接続
+
+環境変数を設定することで、外部のSQL Serverに接続できます。
+
+```bash
+# .envファイルに設定するか、直接環境変数を指定
+export SQL_EXTERNAL=true
+export SQL_SERVER=external-server.example.com
+export SQL_PORT=1433
+export SQL_USER=your_user
+export SQL_PASSWORD=your_password
+export SQL_DATABASE=AppDB
+
+# 接続テスト
+npm run test:connection
+
+# DDL適用
+npm run init
+```
+
+| 環境変数 | デフォルト | 説明 |
+|---------|-----------|------|
+| SQL_EXTERNAL | false | trueで外部サーバーモード |
+| SQL_SERVER | localhost | サーバーアドレス |
+| SQL_PORT | 1433 | ポート番号 |
+| SQL_USER | sa | ユーザー名 |
+| SQL_PASSWORD | P@ssw0rd123! | パスワード |
+| SQL_DATABASE | AppDB | データベース名 |
+
 ---
 
 ### 初回セットアップ（make）
