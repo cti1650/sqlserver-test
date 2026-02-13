@@ -13,6 +13,14 @@
     "test:connection": "node scripts/test-connection.js",
     "test:tables": "node scripts/verify-tables.js",
     "test:data": "node scripts/verify-data.js",
+    "test:transaction": "node scripts/test-transaction.js",
+    "test:isolation": "node scripts/test-isolation.js",
+    "seed": "node scripts/seed-data.js",
+    "seed:small": "node scripts/seed-data.js small",
+    "seed:medium": "node scripts/seed-data.js medium",
+    "seed:large": "node scripts/seed-data.js large",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
     "test": "npm run up && npm run wait && npm run test:connection && npm run init && npm run test:tables && npm run test:data",
     "ci": "npm run up && npm run wait && npm run test:connection && npm run init && npm run test:tables && npm run test:data && npm run clean"
   }
