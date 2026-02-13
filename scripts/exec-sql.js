@@ -7,25 +7,34 @@ function getServerString() {
     : `${config.server},${config.port}`;
 }
 
-function buildCommand(query, options = {}) {
-  const { database } = options;
+function execSql(query, options = {}) {
+  const { database, silent } = options;
   const serverStr = getServerString();
   const dbFlag = database ? `-d ${database}` : '';
 
-  if (config.external) {
-    // 外部サーバー: ローカルのsqlcmdを使用
-    return `sqlcmd -S ${serverStr} -U ${config.user} -P '${config.password}' -C ${dbFlag} -Q "${query}"`;
-  }
-  // ローカル: dockerコンテナ内のsqlcmdを使用
-  return `docker exec ${config.container} ${config.sqlcmd} -S ${serverStr} -U ${config.user} -P '${config.password}' -C ${dbFlag} -Q "${query}"`;
-}
+  // 改行を含むクエリはstdinで渡す
+  const hasNewline = query.includes('\n');
 
-function execSql(query, options = {}) {
-  const { silent } = options;
-  const cmd = buildCommand(query, options);
+  let cmd;
+  if (config.external) {
+    cmd = `sqlcmd -S ${serverStr} -U ${config.user} -P '${config.password}' -C ${dbFlag}`;
+  } else {
+    cmd = `docker exec -i ${config.container} ${config.sqlcmd} -S ${serverStr} -U ${config.user} -P '${config.password}' -C ${dbFlag}`;
+  }
+
+  if (!hasNewline) {
+    cmd += ` -Q "${query}"`;
+  }
 
   try {
-    const result = execSync(cmd, { encoding: 'utf8', stdio: silent ? 'pipe' : 'inherit' });
+    const execOptions = { encoding: 'utf8' };
+    if (hasNewline) {
+      execOptions.input = query;
+      execOptions.stdio = silent ? ['pipe', 'pipe', 'pipe'] : ['pipe', 'inherit', 'inherit'];
+    } else {
+      execOptions.stdio = silent ? 'pipe' : 'inherit';
+    }
+    const result = execSync(cmd, execOptions);
     return { success: true, output: result };
   } catch (error) {
     return { success: false, error: error.message };
