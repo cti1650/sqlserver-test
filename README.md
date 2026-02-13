@@ -56,17 +56,44 @@ make test     # SQL Server接続テスト
 
 Windows / Linux / Mac で共通して使用できます。Node.js が必要です。
 
+### 基本操作
+
 ```bash
 npm run up              # コンテナ起動（mssqlのみ）
 npm run down            # コンテナ停止
 npm run clean           # 完全削除
 npm run wait            # SQL Server起動待ち
-npm run init            # DDL流し込み
-npm run test:connection # 接続テスト
-npm run test:tables     # テーブル確認
-npm run test:data       # データ確認
-npm run test            # 全テスト実行（up → wait → init → verify）
-npm run ci              # CI用（テスト後にクリーンアップ）
+npm run detect          # 環境検出
+npm run init            # DDL流し込み（環境自動検出）
+```
+
+### テスト
+
+```bash
+npm run test:connection   # 接続テスト
+npm run test:tables       # テーブル確認
+npm run test:data         # データ確認
+npm run test:transaction  # トランザクションテスト（COMMIT/ROLLBACK/SAVEPOINT）
+npm run test:isolation    # 分離レベルテスト
+npm run test              # 基本テスト実行（up → wait → init → verify）
+npm run ci                # CI用（テスト後にクリーンアップ）
+```
+
+### データ生成
+
+```bash
+npm run seed              # デフォルト（1,000件）
+npm run seed:small        # 1,000件
+npm run seed:medium       # 10,000件
+npm run seed:large        # 100,000件
+```
+
+### バックアップ/リストア
+
+```bash
+npm run backup            # バックアップ作成（7世代管理）
+npm run restore           # バックアップ一覧表示
+npm run restore -- <file> # 指定ファイルからリストア
 ```
 
 ### 初回セットアップ（npm）
@@ -311,7 +338,10 @@ End Sub
 - SQL Server 接続確認
 - ADO / VBA での SELECT / INSERT / UPDATE
 - identity / datetime2 / NULL の挙動確認
-- トランザクション検証
+- トランザクション検証（COMMIT / ROLLBACK / SAVEPOINT / XACT_ABORT）
+- 分離レベル検証（READ UNCOMMITTED / READ COMMITTED / REPEATABLE READ / SERIALIZABLE）
+- 大量データ検証（最大100,000件）
+- バックアップ / リストア（7世代管理）
 - sa / 一般ユーザー差分の体験
 
 ---
@@ -336,7 +366,6 @@ cp .env.example .env
 
 ## 割り切り事項（意図的にやらない）
 
-- バックアップ / リストア
 - 監視 / アラート
 - HA / 冗長化
 - 本番相当の権限制御
