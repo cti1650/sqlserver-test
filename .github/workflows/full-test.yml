@@ -1,0 +1,49 @@
+name: SQL Server Full Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  full-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Start SQL Server
+        run: npm run up
+
+      - name: Wait for SQL Server
+        run: npm run wait
+
+      - name: Test connection
+        run: npm run test:connection
+
+      - name: Apply DDL
+        run: npm run init
+
+      - name: Verify tables
+        run: npm run test:tables
+
+      - name: Verify data
+        run: npm run test:data
+
+      - name: Test transactions
+        run: npm run test:transaction
+
+      - name: Test isolation levels
+        run: npm run test:isolation
+
+      - name: Load test (100,000 records)
+        run: npm run seed:large
+
+      - name: Backup test
+        run: npm run backup
+
+      - name: Cleanup
+        if: always()
+        run: npm run clean
