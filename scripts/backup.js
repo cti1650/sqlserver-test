@@ -18,10 +18,11 @@ if (!config.external) {
   }
 }
 
+// Express Editionでは COMPRESSION がサポートされていないため除外
 const sql = `
 BACKUP DATABASE AppDB
 TO DISK = '${backupPath}'
-WITH FORMAT, INIT, COMPRESSION,
+WITH FORMAT, INIT,
 NAME = 'AppDB Full Backup';
 `;
 
