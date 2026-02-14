@@ -4,7 +4,7 @@ ADO / VBA / SSMS での動作検証を目的とした
 **使い捨て前提の SQL Server 検証環境**。
 
 - SQL Server Express Edition（本番利用可能な無料版）
-- コンテナは自動再起動（`restart: always`）
+- コンテナは自動再起動（`restart: unless-stopped`）
 - 高可用性・監視・本番運用は考慮しない
 - 「一回は SQL Server を踏む」ための構成
 - 壊して・戻して・試すための最小セット
@@ -41,6 +41,7 @@ make up       # コンテナ起動
 make init     # DDL流し込み
 make sql      # DB接続（sqlcmd）
 make logs     # ログ確認
+make ps       # コンテナ状態確認
 make stop     # 一時停止
 make start    # 再開
 make restart  # 再起動
