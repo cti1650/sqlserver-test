@@ -2,7 +2,7 @@ services:
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver-test
-    restart: always
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: ${SA_PASSWORD:-P@ssw0rd123!}
@@ -15,7 +15,7 @@ services:
   cloudbeaver:
     image: dbeaver/cloudbeaver:latest
     container_name: cloudbeaver
-    restart: always
+    restart: unless-stopped
     ports:
       - "127.0.0.1:8978:8978"
     volumes:
