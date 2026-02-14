@@ -357,7 +357,7 @@ cp .env.example .env
 | 変数 | デフォルト値 | 説明 |
 |------|-------------|------|
 | SA_PASSWORD | P@ssw0rd123! | SQL Server saパスワード |
-| MSSQL_PID | Developer | SQL Serverエディション |
+| MSSQL_PID | Express | SQL Serverエディション（Express/Developer/Evaluation）|
 | CB_SERVER_NAME | SQL Server Test | CloudBeaverサーバー名 |
 | CB_ADMIN_NAME | cbadmin | CloudBeaver管理者名 |
 | CB_ADMIN_PASSWORD | P@ssw0rd123! | CloudBeaver管理者パスワード |
