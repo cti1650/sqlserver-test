@@ -5,7 +5,9 @@ ADO / VBA / SSMS での動作検証を目的とした
 
 - SQL Server Express Edition（本番利用可能な無料版）
 - コンテナは自動再起動（`restart: unless-stopped`）
-- 高可用性・監視・本番運用は考慮しない
+- ヘルスチェック付き（SQL Server応答監視）
+- データはホストマウント（`data/`、`backups/`）で永続化
+- 高可用性・本番運用は考慮しない
 - 「一回は SQL Server を踏む」ための構成
 - 壊して・戻して・試すための最小セット
 
@@ -22,6 +24,8 @@ ADO / VBA / SSMS での動作検証を目的とした
 │   ├── 03-data.sql         # サンプルデータ
 │   ├── 04-users-onprem.sql # ユーザー（オンプレ/RDS用）
 │   └── 04-users-azure.sql  # ユーザー（Azure SQL DB用）
+├── data/                   # DBデータ（ホストマウント、git除外）
+├── backups/                # バックアップ（ホストマウント、git除外）
 ├── Makefile                # Linux/Mac用
 ├── package.json            # クロスプラットフォーム用
 ├── scripts/                # npm scripts用ヘルパー
@@ -98,6 +102,8 @@ npm run backup            # バックアップ作成（7世代管理）
 npm run restore           # バックアップ一覧表示
 npm run restore -- <file> # 指定ファイルからリストア
 ```
+
+バックアップは `./backups/` にホストマウントされるため、`make clean` してもファイルは残ります。
 
 ### 初回セットアップ（npm）
 
@@ -178,7 +184,14 @@ make init     # DDL流し込み
 ### 検証が終わったら
 
 ```bash
-make clean    # 完全削除（ボリュームも削除）
+make clean    # コンテナ削除（data/とbackups/はホストに残る）
+```
+
+完全に削除する場合:
+
+```bash
+make clean
+rm -rf data/ backups/
 ```
 
 ---
@@ -369,7 +382,7 @@ cp .env.example .env
 
 ## 割り切り事項（意図的にやらない）
 
-- 監視 / アラート
+- 外部アラート通知
 - HA / 冗長化
 - 本番相当の権限制御
 - Secrets 管理

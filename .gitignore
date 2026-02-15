@@ -1,5 +1,7 @@
-# Docker volumes
+# Docker volumes / Host mount data
 mssql_data/
+data/
+backups/
 
 # Environment files
 .env
