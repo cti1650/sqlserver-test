@@ -32,7 +32,7 @@ ADO / VBA / SSMS での動作検証を目的とした
 ├── README.md
 ├── .env.example
 └── cloudbeaver-config/
-    └── initial-data-sources.conf
+    └── data-sources.json      # CloudBeaver初期接続設定
 ```
 
 ---
@@ -213,18 +213,7 @@ make clean    # 完全削除（コンテナ+データ+バックアップ）
 
 ### 初回の接続設定
 
-1. 上記URLにアクセスしてログイン
-2. 左上メニュー → 「Connection」→「New Connection」
-3. 「SQL Server」を選択
-4. 以下を入力:
-   - Host: `mssql`
-   - Port: `1433`
-   - Database: `master`
-   - User: `sa`
-   - Password: `P@ssw0rd123!`
-5. 「Create」で保存
-
-※ 一度作成すれば、ボリュームに保存されるため次回以降は自動表示されます
+SQL Server接続は自動設定されています。ログイン後すぐに使用できます。
 
 ---
 

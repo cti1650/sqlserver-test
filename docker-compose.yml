@@ -26,8 +26,8 @@ services:
     ports:
       - "127.0.0.1:8978:8978"
     volumes:
-      - cloudbeaver_data:/opt/cloudbeaver/workspace
-      - ./cloudbeaver-config/initial-data-sources.conf:/opt/cloudbeaver/conf/initial-data-sources.conf:ro
+      - ./data/cloudbeaver:/opt/cloudbeaver/workspace
+      - ./cloudbeaver-config/data-sources.json:/opt/cloudbeaver/workspace/GlobalConfiguration/.dbeaver/data-sources.json:ro
     environment:
       CB_SERVER_NAME: ${CB_SERVER_NAME:-SQL Server Test}
       CB_ADMIN_NAME: ${CB_ADMIN_NAME:-cbadmin}
@@ -35,6 +35,3 @@ services:
       CLOUDBEAVER_APP_GRANT_CONNECTIONS_ACCESS_TO_ANONYMOUS_TEAM: "true"
     depends_on:
       - mssql
-
-volumes:
-  cloudbeaver_data:
