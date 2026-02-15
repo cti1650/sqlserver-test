@@ -6,7 +6,7 @@
   "scripts": {
     "up": "docker compose up -d mssql",
     "down": "docker compose down",
-    "clean": "docker compose down -v --remove-orphans",
+    "clean": "docker compose down -v --remove-orphans && rm -rf data/ backups/",
     "wait": "node scripts/wait-for-sqlserver.js",
     "detect": "node scripts/detect-env.js",
     "init": "node scripts/apply-ddl.js",

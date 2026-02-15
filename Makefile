@@ -17,7 +17,7 @@ help:
 	@echo "  restart  - コンテナ再起動"
 	@echo "  logs     - ログ表示"
 	@echo "  ps       - コンテナ状態確認"
-	@echo "  clean    - コンテナ+ボリューム完全削除"
+	@echo "  clean    - 完全削除（コンテナ+データ+バックアップ）"
 	@echo "  purge    - clean + イメージ削除"
 	@echo "  reset    - clean + up（完全リセット）"
 	@echo "  init     - DDL流し込み"
@@ -53,9 +53,10 @@ logs:
 ps:
 	docker compose ps
 
-# 完全削除（コンテナ+ボリューム+ネットワーク）
+# 完全削除（コンテナ+ボリューム+データ+バックアップ）
 clean:
 	docker compose down -v --remove-orphans
+	rm -rf data/ backups/
 
 # 完全削除+イメージ削除
 purge: clean
