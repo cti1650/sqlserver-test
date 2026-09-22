@@ -7,6 +7,10 @@ backups/
 .env
 .env.local
 
+# LibreOffice検証用のローカルツール / 生成物
+.tools/
+*.odb
+
 # OS files
 .DS_Store
 Thumbs.db

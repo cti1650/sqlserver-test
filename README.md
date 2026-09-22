@@ -29,6 +29,13 @@ npm run up && npm run wait && npm run init && npm run test:connection
 ただし `npm run up` は SQL Server のみを起動するので、CloudBeaver も使うなら
 `make up` か `docker compose up -d` を使う。
 
+LibreOffice Base から触るなら（macOS / Linux）:
+
+```bash
+npm run lo:setup   # JDK と JDBC ドライバを .tools/ に用意
+npm run lo:base    # 接続設定済みの .odb を作って Base で開く
+```
+
 検証が終わったら `make clean`（または `npm run clean`）で丸ごと消す。
 
 ---
