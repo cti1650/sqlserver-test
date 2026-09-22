@@ -10,7 +10,8 @@ on:
 
 env:
   # https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/
-  MSSQL_JDBC_VERSION: 13.6.0.jre11
+  # 13.2.0 is stable with LibreOffice 26.8 and JDK 11
+  MSSQL_JDBC_VERSION: 13.2.0.jre11
 
 jobs:
   # ------------------------------------------------------------------
@@ -35,7 +36,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '11'
 
       - name: Set up Docker (Colima)
         run: |

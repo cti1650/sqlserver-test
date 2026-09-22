@@ -64,13 +64,13 @@ Apple Silicon の Mac で arm64 版 LibreOffice を使っているなら JDK も
 Windows で 64bit 版 LibreOffice を使っているなら JDK も 64bit 版。
 
 ```bash
-# macOS
-brew install --cask temurin@21
+# macOS（JDK 11 推奨、mssql-jdbc 13.2.0 と相性良好）
+brew install --cask temurin@11
 ```
 
-Windows は [Adoptium](https://adoptium.net/) から Temurin 21 (LTS) の `.msi` を入れる。
+Windows は [Adoptium](https://adoptium.net/) から Temurin 11 (LTS) の `.msi` を入れる。
 
-JDK 17 以降であれば動作する。LTS を選んでおくのが無難。
+**mssql-jdbc 13.2.0 は JDK 11 でテスト済みのため、JDK 11 を推奨します。** JDK 17 以降でも動作しますが、安定性重視なら JDK 11 LTS を選んでください。
 
 インストール確認:
 
@@ -84,10 +84,12 @@ java -version
 
 Microsoft JDBC Driver for SQL Server を Maven Central から取得する。
 
+**推奨: `npm run lo:setup` でダウンロードを自動化する（以下は手動手順）**
+
 ```bash
-# macOS / Linux
-mkdir -p ~/jdbc
-curl -L -o ~/jdbc/mssql-jdbc-13.2.0.jre11.jar \
+# macOS / Linux（手動の場合）
+mkdir -p ~/.tools/jdbc
+curl -L -o ~/.tools/jdbc/mssql-jdbc-13.2.0.jre11.jar \
   https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/13.2.0.jre11/mssql-jdbc-13.2.0.jre11.jar
 ```
 

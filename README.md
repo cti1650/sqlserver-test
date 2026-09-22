@@ -33,7 +33,7 @@ SQL Server を Web で触るなら（推奨）:
 
 ```bash
 docker compose up -d       # SQL Server + CloudBeaver を起動
-# http://127.0.0.1:8978 でアクセス
+# http://127.0.0.1:8978 でアクセス（localhost ではなく 127.0.0.1 を使用）
 # ログイン: cbadmin / P@ssw0rd123!
 ```
 
