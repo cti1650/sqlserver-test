@@ -15,13 +15,15 @@ const JDK_DIR = path.join(TOOLS_DIR, 'jdk');
 const JDBC_DIR = path.join(TOOLS_DIR, 'jdbc');
 
 // https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/
-const MSSQL_JDBC_VERSION = '13.6.0.jre11';
+// 13.2.0 は 13.6.0 より安定し、LibreOffice との互換性が高い
+const MSSQL_JDBC_VERSION = '13.2.0.jre11';
 const MSSQL_JDBC_JAR = path.join(JDBC_DIR, `mssql-jdbc-${MSSQL_JDBC_VERSION}.jar`);
 const MSSQL_JDBC_URL =
   'https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/' +
   `${MSSQL_JDBC_VERSION}/mssql-jdbc-${MSSQL_JDBC_VERSION}.jar`;
 
-const JDK_MAJOR = '21';
+// JDK 11 は mssql-jdbc と相性が良く、安定性が高い（JDK 21 は不安定）
+const JDK_MAJOR = '11';
 
 function sofficePath() {
   if (process.env.SOFFICE) return process.env.SOFFICE;
@@ -100,8 +102,9 @@ function javaEnv() {
     UNO_JAVA_JFW_ENV_JREHOME: '1',
     UNO_JAVA_JFW_ENV_CLASSPATH: '1',
     // JVM ヒープサイズを明示的に設定（LibreOffice の大量メモリ使用に対応）
+    // Java 9+ モジュールシステムで sql モジュールを明示する（JDBC 呼び出しで必須）
     // これらは LibreOffice が JVM を起動するときに使用する
-    _JAVA_OPTIONS: '-Xmx512m',  // 最大ヒープサイズ 512MB
+    _JAVA_OPTIONS: '-Xmx1024m --add-modules java.sql',
   };
 }
 

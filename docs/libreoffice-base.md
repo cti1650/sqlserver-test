@@ -87,13 +87,16 @@ Microsoft JDBC Driver for SQL Server を Maven Central から取得する。
 ```bash
 # macOS / Linux
 mkdir -p ~/jdbc
-curl -L -o ~/jdbc/mssql-jdbc-13.6.0.jre11.jar \
-  https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/13.6.0.jre11/mssql-jdbc-13.6.0.jre11.jar
+curl -L -o ~/jdbc/mssql-jdbc-13.2.0.jre11.jar \
+  https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/13.2.0.jre11/mssql-jdbc-13.2.0.jre11.jar
 ```
 
 Windows は同じ URL をブラウザで開いて任意のフォルダ（例: `C:\jdbc\`）に保存する。
 
-- `jre11` 版は JDK 11 以降で動く。JDK 21 / 25 でもこれを使う
+**バージョン選択**:
+- **13.2.0** 推奨（LibreOffice との安定性が高い）
+- `jre11` 版は JDK 11 以降で動く。**JDK 11 でテスト済み**
+- JDK 21 を使う場合は 13.6.0 でテストするが、クラッシュすることがある
 - JDK 8 を使う場合だけ `jre8` 版を選ぶ
 - 最新版は [Maven Central のバージョン一覧](https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/) で確認できる
 
@@ -336,31 +339,47 @@ macOS 側は SQL Server の公式イメージが amd64 のみのため Intel ラ
 
 ## トラブルシューティング
 
-### Base が起動時にクラッシュ（Java GC Thread エラー）
+### Base が起動時にクラッシュ（Java / JDBC エラー）
 
-**症状**: LibreOffice が起動直後に「Abort trap: 6」で落ちる、またはメモリエラーで落ちる。
+**症状**: 
+- LibreOffice が起動直後に「Abort trap: 6」で落ちる
+- メモリ不足エラー
+- JDBC ドライバが呼ばれるときにクラッシュ（`wasNull()`）
 
-**原因**: JVM のヒープメモリ不足。LibreOffice は JDBC 経由で大量のメモリを使用します。
+**原因**（複合的）:
+1. JVM のヒープメモリ不足（デフォルト 64MB では不足）
+2. mssql-jdbc 13.6.0 と JDK 21 の組み合わせが不安定
+3. LibreOffice 26.8 との互換性問題
 
-**対応**:
+**対応**（この順で試す）:
 
-1. **JVM ヒープサイズを増やす** — `lo:setup` から再度実行すると `_JAVA_OPTIONS=-Xmx512m` が設定されます
+1. **セットアップを再実行** — JDK と JDBC ドライバを最新化、メモリ設定を 1GB に上げる
    ```bash
-   npm run lo:setup
+   rm -rf .tools/        # 既存ツールをクリア
+   npm run lo:setup      # 再ダウンロード（JDK 11 + mssql-jdbc 13.2.0）
+   npm run lo:test       # 接続テスト
+   npm run lo:base       # Base を起動
    ```
 
-2. **LibreOffice の Java メモリ設定を確認**
-   - Tools > Options > LibreOffice > Java
-   - Java が**有効**か確認
-   - JDK パスが正しいか確認
-   - メモリ設定があれば、さらに増やす（1GB 以上推奨）
+2. **使用 JDK を確認**
+   ```bash
+   java -version         # JDK 11 LTS 推奨
+   ```
+   - **JDK 21 を使っている場合は JDK 11 に切り替える**（mssql-jdbc 13.2.0 はこちらが安定）
+   - Homebrew なら: `brew install --cask temurin@11`
 
-3. **再度 Base を起動**
+3. **LibreOffice の Java メモリ設定を確認**
+   - Tools > Options > LibreOffice > Advanced > Java
+   - Java が**有効**か確認
+   - JDK パスが正しいか確認（`/Library/Java/JavaVirtualMachines/temurin-11.jdk/...`）
+
+4. **再度 Base を起動**
    ```bash
    npm run lo:base
    ```
 
-マシンのメモリが十分（8GB 以上）でも、JVM に割り当てるヒープが小さすぎるとクラッシュします。
+**マシンメモリが十分（8GB 以上）でも、JVM ヒープが小さいとクラッシュします。**
+`npm run lo:setup` で自動的に `_JAVA_OPTIONS=-Xmx1024m` が設定されます。
 
 ### JDBC: 「クラスのテスト」で失敗する
 
