@@ -31,6 +31,33 @@ const RESULT_FILE = path.join(os.tmpdir(), 'lo_conn_test.txt');
 const MACRO_URL =
   'vnd.sun.star.script:Standard.ConnTest.RunTest?language=Basic&location=application';
 
+/** システムにインストールされた JAVA_HOME を見つける（Homebrew など） */
+function findSystemJavaHome() {
+  if (process.platform === 'darwin') {
+    // macOS: /usr/libexec/java_home で現在のデフォルト JRE を取得
+    try {
+      const { spawnSync: spawn } = require('child_process');
+      const result = spawn('/usr/libexec/java_home', [], { encoding: 'utf8' });
+      if (result.status === 0) return result.stdout.trim();
+    } catch (e) {
+      // 失敗時は次の方法へ
+    }
+  }
+  // PATH に java がある場合は、その親ディレクトリを使う
+  try {
+    const { spawnSync: spawn } = require('child_process');
+    const result = spawn('which', ['java'], { encoding: 'utf8' });
+    if (result.status === 0) {
+      // /usr/local/bin/java → /usr/local
+      const binPath = path.dirname(result.stdout.trim());
+      return path.dirname(binPath);
+    }
+  } catch (e) {
+    // 失敗時は null
+  }
+  return null;
+}
+
 function resolveTarget() {
   const useOdbc = process.argv.includes('--odbc') || process.env.LO_DRIVER === 'odbc';
 
@@ -76,12 +103,23 @@ function main() {
   if (fs.existsSync(RESULT_FILE)) fs.unlinkSync(RESULT_FILE);
 
   console.log(`Running LibreOffice connection test [${target.kind}] ${target.url}`);
+
+  // JAVA_HOME をセット：.tools の JDK がなければ、システムにインストールされた Java を使う
+  let javaHome = target.env.JAVA_HOME || process.env.JAVA_HOME || findSystemJavaHome();
+  if (!javaHome) {
+    console.error('✗ Java installation not found.');
+    console.error('  Install with: brew install --cask temurin@11');
+    process.exit(1);
+  }
+
   const r = spawnSync(soffice, ['--headless', '--norestore', '--nologo', MACRO_URL], {
     stdio: 'inherit',
     timeout: 300000,
     env: {
       ...process.env,
       ...target.env,
+      JAVA_HOME: javaHome,
+      PATH: `${path.join(javaHome, 'bin')}:${process.env.PATH}`,
       LO_TEST_URL: target.url,
       LO_TEST_USER: conn.user,
       LO_TEST_PASS: conn.password,

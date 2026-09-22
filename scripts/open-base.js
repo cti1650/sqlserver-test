@@ -19,6 +19,28 @@ const RESULT_FILE = path.join(os.tmpdir(), 'lo_make_odb.txt');
 const MACRO_URL =
   'vnd.sun.star.script:Standard.ConnTest.MakeOdb?language=Basic&location=application';
 
+/** システムにインストールされた JAVA_HOME を見つける（Homebrew など） */
+function findSystemJavaHome() {
+  if (process.platform === 'darwin') {
+    try {
+      const result = spawnSync('/usr/libexec/java_home', [], { encoding: 'utf8' });
+      if (result.status === 0) return result.stdout.trim();
+    } catch (e) {
+      // 失敗時は次の方法へ
+    }
+  }
+  try {
+    const result = spawnSync('which', ['java'], { encoding: 'utf8' });
+    if (result.status === 0) {
+      const binPath = path.dirname(result.stdout.trim());
+      return path.dirname(binPath);
+    }
+  } catch (e) {
+    // 失敗時は null
+  }
+  return null;
+}
+
 function resolveTarget() {
   const useOdbc = process.argv.includes('--odbc') || process.env.LO_DRIVER === 'odbc';
   if (useOdbc) {
@@ -45,9 +67,19 @@ function main() {
   if (fs.existsSync(RESULT_FILE)) fs.unlinkSync(RESULT_FILE);
   if (fs.existsSync(odbPath)) fs.unlinkSync(odbPath);
 
+  // JAVA_HOME をセット：.tools の JDK がなければ、システムにインストールされた Java を使う
+  let javaHome = target.env.JAVA_HOME || process.env.JAVA_HOME || findSystemJavaHome();
+  if (!javaHome) {
+    console.error('✗ Java installation not found.');
+    console.error('  Install with: brew install --cask temurin@11');
+    process.exit(1);
+  }
+
   const env = {
     ...process.env,
     ...target.env,
+    JAVA_HOME: javaHome,
+    PATH: `${path.join(javaHome, 'bin')}:${process.env.PATH}`,
     LO_TEST_URL: target.url,
     LO_TEST_USER: conn.user,
     LO_TEST_PASS: conn.password,
