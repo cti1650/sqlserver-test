@@ -54,11 +54,14 @@ jdbc:sqlserver://127.0.0.1:1433;databaseName=AppDB;encrypt=true;trustServerCerti
 
 ブラウザから SQL Server を操作できる Web クライアントを同梱している。
 
-- URL: http://localhost:8978
+- URL: http://127.0.0.1:8978（`127.0.0.1` でバインドされているため `localhost` は不可）
 - 管理者: `cbadmin` / `P@ssw0rd123!`
 
-SQL Server 接続は `cloudbeaver-config/data-sources.json` で自動設定されるため、
-ログイン後すぐに使用できる。
+SQL Server 接続は `cloudbeaver-config/data-sources.json` で自動設定される。
+ログイン後、左側の **Connections** に以下の 2 つが表示される：
+
+- **SQL Server (sa)** — 管理者用（DDL / 権限管理）
+- **SQL Server (app_user)** — アプリケーション用（SELECT / INSERT / UPDATE）
 
 ---
 
