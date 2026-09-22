@@ -3,7 +3,7 @@
     "connections": {
         "sqlserver-sa": {
             "provider": "sqlserver",
-            "driver": "sqlserver:microsoft",
+            "driver": "microsoft",
             "name": "SQL Server (sa)",
             "description": "System admin — for DDL / schema management",
             "save-password": true,
@@ -22,7 +22,7 @@
         },
         "sqlserver-app": {
             "provider": "sqlserver",
-            "driver": "sqlserver:microsoft",
+            "driver": "microsoft",
             "name": "SQL Server (app_user)",
             "description": "Application user — for SELECT/INSERT/UPDATE",
             "save-password": true,
