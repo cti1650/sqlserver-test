@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="ConnTest" script:language="StarBasic">REM  *****  BASIC  *****
+REM LibreOffice Base から SQL Server への接続を検証するマクロ。
+REM scripts/test-libreoffice.js から headless で呼び出される。
+REM 設定はすべて環境変数から受け取る:
+REM   LO_TEST_URL         : SDBC接続URL（例 sdbc:odbc:SQLServerTest / jdbc:sqlserver://...）
+REM   LO_TEST_USER        : ユーザー名
+REM   LO_TEST_PASS        : パスワード
+REM   LO_TEST_DRIVERCLASS : JDBCドライバークラス（JDBC時のみ）
+REM   LO_TEST_CHARSET     : CharSet接続プロパティ（任意）
+REM   LO_TEST_OUT         : 結果を書き出すファイルパス
+
+Dim sOut As String
+
+Sub Emit(sLine As String)
+  sOut = sOut &amp; sLine &amp; Chr(10)
+End Sub
+
+Sub RunTest
+  Dim oDM As Object, oConn As Object, oMeta As Object, oStmt As Object, oRS As Object
+  Dim sUrl As String, sUser As String, sPass As String, sClass As String, sCharSet As String
+  Dim nProps As Integer
+
+  sOut = ""
+  sUrl      = Environ("LO_TEST_URL")
+  sUser     = Environ("LO_TEST_USER")
+  sPass     = Environ("LO_TEST_PASS")
+  sClass    = Environ("LO_TEST_DRIVERCLASS")
+  sCharSet  = Environ("LO_TEST_CHARSET")
+
+  Emit("URL: " &amp; sUrl)
+  If sClass &lt;&gt; "" Then Emit("DRIVERCLASS: " &amp; sClass)
+  If sCharSet &lt;&gt; "" Then Emit("CHARSET: " &amp; sCharSet)
+
+  On Error Goto Fail
+
+  ' --- 接続プロパティの組み立て ---
+  nProps = 1
+  If sClass &lt;&gt; "" Then nProps = nProps + 1
+  If sCharSet &lt;&gt; "" Then nProps = nProps + 1
+
+  Dim aProps(nProps) As New com.sun.star.beans.PropertyValue
+  aProps(0).Name = "user"     : aProps(0).Value = sUser
+  aProps(1).Name = "password" : aProps(1).Value = sPass
+  nProps = 2
+  If sClass &lt;&gt; "" Then
+    aProps(nProps).Name = "JavaDriverClass" : aProps(nProps).Value = sClass
+    nProps = nProps + 1
+  End If
+  If sCharSet &lt;&gt; "" Then
+    aProps(nProps).Name = "CharSet" : aProps(nProps).Value = sCharSet
+    nProps = nProps + 1
+  End If
+
+  ' --- 1. 接続 ---
+  oDM = createUnoService("com.sun.star.sdbc.DriverManager")
+  oConn = oDM.getConnectionWithInfo(sUrl, aProps())
+  Emit("CONNECT: OK")
+
+  ' --- 2. メタデータ ---
+  oMeta = oConn.getMetaData()
+  Emit("DBMS: " &amp; oMeta.getDatabaseProductName() &amp; " " &amp; oMeta.getDatabaseProductVersion())
+  Emit("DRIVER: " &amp; oMeta.getDriverName() &amp; " " &amp; oMeta.getDriverVersion())
+
+  ' --- 3. テーブル一覧（Baseのテーブルビューが依存する） ---
+  Dim aTypes(0) As String
+  aTypes(0) = "TABLE"
+  ' カタログは現在のDB名を明示する。空文字を渡すとJDBCドライバが不正なカタログ名として拒否する
+  Dim sCatalog As String
+  sCatalog = oConn.getCatalog()
+  Emit("CATALOG: " &amp; sCatalog)
+  oRS = oMeta.getTables(sCatalog, "%", "%", aTypes())
+  Dim sTables As String, nTables As Integer
+  Do While oRS.next()
+    sTables = sTables &amp; " " &amp; oRS.getString(3)
+    nTables = nTables + 1
+  Loop
+  Emit("TABLES(" &amp; nTables &amp; "):" &amp; sTables)
+  If InStr(sTables, "M_Customer") = 0 Then
+    Emit("ERROR: M_Customer not found")
+    Goto Fail
+  End If
+
+  ' --- 4. 既存データの読み取り ---
+  oStmt = oConn.createStatement()
+  oRS = oStmt.executeQuery("SELECT CustomerCode, CustomerName FROM M_Customer ORDER BY CustomerCode")
+  Dim nRows As Integer, sFirstName As String
+  Do While oRS.next()
+    If nRows = 0 Then sFirstName = oRS.getString(2)
+    nRows = nRows + 1
+  Loop
+  Emit("READ: " &amp; nRows &amp; " rows, first=[" &amp; sFirstName &amp; "]")
+  If nRows = 0 Then
+    Emit("ERROR: no rows returned")
+    Goto Fail
+  End If
+  If sFirstName = "株式会社テスト商事" Then
+    Emit("JP-READ: OK")
+  Else
+    Emit("JP-READ: NG (got [" &amp; sFirstName &amp; "])")
+    Goto Fail
+  End If
+
+  ' --- 5. ASCIIの書き込み（パラメータ経由 = Baseのグリッド編集と同じ経路） ---
+  Dim oPS As Object
+  oPS = oConn.prepareStatement("INSERT INTO M_Customer (CustomerCode, CustomerName, IsActive) VALUES (?, ?, 1)")
+  oPS.setString(1, "ZZ01")
+  oPS.setString(2, "CI ASCII TEST")
+  oPS.executeUpdate()
+  oRS = oStmt.executeQuery("SELECT CustomerName FROM M_Customer WHERE CustomerCode = 'ZZ01'")
+  Dim sBack As String
+  Do While oRS.next() : sBack = oRS.getString(1) : Loop
+  oStmt.executeUpdate("DELETE FROM M_Customer WHERE CustomerCode = 'ZZ01'")
+  If sBack = "CI ASCII TEST" Then
+    Emit("WRITE: OK")
+  Else
+    Emit("WRITE: NG (got [" &amp; sBack &amp; "])")
+    Goto Fail
+  End If
+
+  ' --- 6. 日本語の書き込み（環境によって落ちるので失敗しても続行する） ---
+  Dim sJp As String
+  sJp = "日本語書込テスト"
+  sBack = ""
+  On Error Resume Next
+  oPS = oConn.prepareStatement("INSERT INTO M_Customer (CustomerCode, CustomerName, IsActive) VALUES (?, ?, 1)")
+  oPS.setString(1, "ZZ02")
+  oPS.setString(2, sJp)
+  oPS.executeUpdate()
+  If Err &lt;&gt; 0 Then
+    Emit("JP-WRITE: NG (" &amp; Error$ &amp; ")")
+    Err.Clear
+  Else
+    oRS = oStmt.executeQuery("SELECT CustomerName FROM M_Customer WHERE CustomerCode = 'ZZ02'")
+    Do While oRS.next() : sBack = oRS.getString(1) : Loop
+    If sBack = sJp Then
+      Emit("JP-WRITE: OK")
+    Else
+      Emit("JP-WRITE: NG (got [" &amp; sBack &amp; "])")
+    End If
+  End If
+  oStmt.executeUpdate("DELETE FROM M_Customer WHERE CustomerCode = 'ZZ02'")
+  Err.Clear
+  On Error Goto Fail
+
+  oConn.close()
+  Emit("RESULT: SUCCESS")
+  Goto Done
+
+Fail:
+  If Err &lt;&gt; 0 Then Emit("EXCEPTION: err=" &amp; Err &amp; " " &amp; Error$ &amp; " (line " &amp; Erl &amp; ")")
+  Emit("RESULT: FAILED")
+
+Done:
+  Dim sPath As String, iFile As Integer
+  sPath = Environ("LO_TEST_OUT")
+  iFile = Freefile
+  Open sPath For Output As #iFile
+  Print #iFile, sOut
+  Close #iFile
+End Sub
+</script:module>

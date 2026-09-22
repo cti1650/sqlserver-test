@@ -15,6 +15,7 @@
     "test:data": "node scripts/verify-data.js",
     "test:transaction": "node scripts/test-transaction.js",
     "test:isolation": "node scripts/test-isolation.js",
+    "test:libreoffice": "node scripts/test-libreoffice.js",
     "seed": "node scripts/seed-data.js",
     "seed:small": "node scripts/seed-data.js small",
     "seed:medium": "node scripts/seed-data.js medium",

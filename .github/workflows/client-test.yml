@@ -1,0 +1,174 @@
+name: LibreOffice Client Test
+
+# LibreOffice Base から SQL Server に接続できることを OS 別に検証する。
+#   macos-jdbc   : macOS + JDBC（推奨経路）
+#   windows-odbc : Windows + ODBC
+#
+# 実行時間が長くタダではないので手動実行のみ。
+on:
+  workflow_dispatch:
+
+env:
+  # https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/
+  MSSQL_JDBC_VERSION: 13.6.0.jre11
+
+jobs:
+  # ------------------------------------------------------------------
+  # macOS + LibreOffice + JDBC
+  #
+  # SQL Server の公式イメージは amd64 のみなので Intel ランナーを使う。
+  # macos-15-intel は標準ランナー（public リポジトリなら無料）。
+  # arm64 ランナー（macos-latest）では Rosetta 経由の実行になり実用的でない。
+  # ------------------------------------------------------------------
+  macos-jdbc:
+    name: macOS / LibreOffice / JDBC
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Docker (Colima)
+        run: |
+          brew install docker docker-compose colima
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn "$(brew --prefix)/opt/docker-compose/bin/docker-compose" \
+                  ~/.docker/cli-plugins/docker-compose
+          colima start --cpu 3 --memory 8 --disk 20
+          docker version
+
+      - name: Start SQL Server
+        run: npm run up
+
+      - name: Wait for SQL Server
+        run: npm run wait
+
+      - name: Apply DDL
+        run: npm run init
+
+      - name: Install LibreOffice
+        run: brew install --cask libreoffice
+
+      - name: Download JDBC driver
+        run: |
+          mkdir -p "$RUNNER_TEMP/jdbc"
+          curl -fsSL -o "$RUNNER_TEMP/jdbc/mssql-jdbc.jar" \
+            "https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${MSSQL_JDBC_VERSION}/mssql-jdbc-${MSSQL_JDBC_VERSION}.jar"
+          ls -l "$RUNNER_TEMP/jdbc"
+
+      - name: LibreOffice JDBC connection test
+        env:
+          # LibreOffice の Java 設定を GUI ではなく環境変数で与える（jvmfwk の direct mode）
+          UNO_JAVA_JFW_ENV_JREHOME: '1' # JAVA_HOME を JRE として使う
+          UNO_JAVA_JFW_ENV_CLASSPATH: '1' # CLASSPATH をクラスパスとして使う
+          CLASSPATH: ${{ runner.temp }}/jdbc/mssql-jdbc.jar
+          LO_TEST_URL: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=AppDB;encrypt=true;trustServerCertificate=true'
+          LO_TEST_DRIVERCLASS: com.microsoft.sqlserver.jdbc.SQLServerDriver
+          LO_TEST_REQUIRE_JP: '1' # JDBC なら日本語の書き込みも成功するはず
+        run: npm run test:libreoffice
+
+      - name: Cleanup
+        if: always()
+        run: npm run clean
+
+  # ------------------------------------------------------------------
+  # Windows + LibreOffice + ODBC
+  #
+  # Windows ランナーの Docker は Windows コンテナ専用で、Linux ベースの
+  # SQL Server イメージを動かせない。そのため docker-compose ではなく
+  # SQL Server Express をランナーに直接インストールして検証する。
+  # → このジョブが見ているのは「DDL + クライアント接続」であって
+  #    docker-compose.yml そのものではない。
+  # ------------------------------------------------------------------
+  windows-odbc:
+    name: Windows / LibreOffice / ODBC
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    env:
+      SQL_INSTANCE: 'localhost\SQLEXPRESS'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install SQL Server Express
+        run: choco install sql-server-express -y --no-progress
+
+      - name: Enable SQL Server authentication
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $instanceId = (Get-ItemProperty 'HKLM:\Software\Microsoft\Microsoft SQL Server\Instance Names\SQL').SQLEXPRESS
+          Write-Host "Instance id: $instanceId"
+          Set-ItemProperty `
+            -Path "HKLM:\Software\Microsoft\Microsoft SQL Server\$instanceId\MSSQLServer" `
+            -Name LoginMode -Value 2
+          Restart-Service 'MSSQL$SQLEXPRESS' -Force
+          Get-Service 'MSSQL$SQLEXPRESS'
+
+      - name: Apply DDL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+          foreach ($f in @(
+            'ddl/01-database.sql',
+            'ddl/02-tables.sql',
+            'ddl/03-data.sql',
+            'ddl/04-users-onprem.sql'
+          )) {
+            Write-Host "Applying $f"
+            Invoke-Sqlcmd -ServerInstance $env:SQL_INSTANCE -InputFile $f -TrustServerCertificate
+          }
+
+      - name: Install LibreOffice
+        run: choco install libreoffice-fresh -y --no-progress
+
+      - name: Create ODBC DSN
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # 使える中でいちばん新しい SQL Server 用ドライバを選ぶ。
+          # ODBC Driver 18/17 が無い環境では Windows 同梱の "SQL Server" にフォールバックする。
+          $preferred = @(
+            'ODBC Driver 18 for SQL Server',
+            'ODBC Driver 17 for SQL Server',
+            'SQL Server Native Client 11.0',
+            'SQL Server'
+          )
+          $installed = (Get-OdbcDriver -Platform '64-bit').Name
+          Write-Host "Installed drivers: $($installed -join ', ')"
+          $driver = $preferred | Where-Object { $installed -contains $_ } | Select-Object -First 1
+          if (-not $driver) { throw 'No SQL Server ODBC driver found' }
+          Write-Host "Using driver: $driver"
+
+          $props = @("Server=$env:SQL_INSTANCE", 'Database=AppDB')
+          if ($driver -like 'ODBC Driver 1*') {
+            $props += 'Encrypt=yes'
+            $props += 'TrustServerCertificate=yes'
+          }
+          Add-OdbcDsn -Name SQLServerTest -DriverName $driver -DsnType System `
+            -Platform '64-bit' -SetPropertyValue $props
+          Get-OdbcDsn -Name SQLServerTest
+
+      - name: LibreOffice ODBC connection test
+        shell: pwsh
+        env:
+          LO_TEST_URL: 'sdbc:odbc:SQLServerTest'
+          # ランナーのロケールは en-US（ACP=1252）なので日本語の書き込みは通らない。
+          # 結果はログに出るが、ここでは必須にしない。詳細は docs/libreoffice-base.md
+          LO_TEST_REQUIRE_JP: '0'
+        run: npm run test:libreoffice
