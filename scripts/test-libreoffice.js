@@ -94,8 +94,14 @@ function main() {
 
   if (!fs.existsSync(RESULT_FILE)) {
     console.error('');
-    console.error(`No result file produced (soffice exit=${r.status}).`);
-    console.error('The macro did not run. Check the LibreOffice installation.');
+    console.error(`✗ No result file produced (soffice exit=${r.status}).`);
+    console.error('');
+    console.error('Possible causes:');
+    console.error('  1. LibreOffice not found (check SOFFICE env var)');
+    console.error('  2. User profile missing (running macOS Big Sur+?)');
+    console.error('  3. LibreOffice crashed or hung (force kill and retry)');
+    console.error('');
+    console.error(`Debug info: ${RESULT_FILE} was not created.`);
     process.exit(1);
   }
 
@@ -106,7 +112,19 @@ function main() {
   console.log('--------------------------');
 
   if (!out.includes('RESULT: SUCCESS')) {
-    console.error('LibreOffice connection test FAILED.');
+    console.error('');
+    console.error('✗ LibreOffice connection test FAILED.');
+    if (out.includes('EXCEPTION')) {
+      const match = out.match(/EXCEPTION: (.+)/);
+      console.error('');
+      console.error('Error details:');
+      if (match) console.error(`  ${match[1]}`);
+    }
+    console.error('');
+    console.error('Next steps:');
+    console.error('  1. Check SQL Server is running: npm run test:connection');
+    console.error('  2. Check LibreOffice version: /Applications/LibreOffice.app --version');
+    console.error('  3. Check Java: java -version');
     process.exit(1);
   }
   if (process.env.LO_TEST_REQUIRE_JP === '1' && !out.includes('JP-WRITE: OK')) {

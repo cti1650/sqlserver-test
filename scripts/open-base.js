@@ -65,16 +65,37 @@ function main() {
   lo.killSoffice();
 
   const out = fs.existsSync(RESULT_FILE) ? fs.readFileSync(RESULT_FILE, 'utf8').trim() : '';
-  if (!out.includes('RESULT: SUCCESS') || !fs.existsSync(odbPath)) {
-    console.error(out || '(no output)');
-    console.error('Failed to generate the .odb file.');
+  console.log('');
+  console.log('--- Macro result ---');
+  console.log(out || '(no output)');
+  console.log('--------------------');
+  console.log('');
+
+  if (!out.includes('RESULT: SUCCESS')) {
+    console.error('Macro execution failed.');
     process.exit(1);
   }
-  console.log(`Created: ${odbPath}`);
+  if (!fs.existsSync(odbPath)) {
+    console.error('.odb file was not created.');
+    process.exit(1);
+  }
+  console.log(`✓ Created: ${odbPath}`);
 
   // GUI 起動。JDBC の場合は Java 設定を環境変数で渡す必要があるため
   // `open` コマンドではなく soffice を直接起動する。
   console.log('Opening LibreOffice Base...');
+
+  // 接続情報と Java 環境をサマリ表示
+  console.log('');
+  console.log('Connection settings:');
+  console.log(`  URL: ${target.url}`);
+  console.log(`  User: ${conn.user}`);
+  console.log(`  Driver: ${target.kind.toUpperCase()}`);
+  if (target.driverClass) console.log(`  JavaDriverClass: ${target.driverClass}`);
+  if (env.JAVA_HOME) console.log(`  JAVA_HOME: ${env.JAVA_HOME}`);
+  if (env.CLASSPATH) console.log(`  CLASSPATH: ${env.CLASSPATH}`);
+  console.log('');
+
   const child = spawn(soffice, ['--base', odbPath], {
     detached: true,
     stdio: 'ignore',
@@ -82,11 +103,16 @@ function main() {
   });
   child.unref();
 
+  console.log('Base is starting...');
   console.log('');
-  console.log(`  接続: ${target.url}`);
-  console.log(`  ユーザー: ${conn.user} / ${conn.password}`);
+  console.log('If Base fails to open:');
+  console.log('  1. Check Console.log (Help > Show Console)');
+  console.log('  2. Run: npm run lo:test   (to verify connection works)');
   console.log('');
-  console.log('左の「テーブル」に M_Customer などが並べば接続成功。');
+  console.log('If tables are empty:');
+  console.log('  1. Tools > Options > LibreOffice > Advanced');
+  console.log('  2. Ensure Java is enabled and JDK path is set');
+  console.log('  3. Restart LibreOffice');
 }
 
 main();
