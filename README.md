@@ -29,12 +29,23 @@ npm run up && npm run wait && npm run init && npm run test:connection
 ただし `npm run up` は SQL Server のみを起動するので、CloudBeaver も使うなら
 `make up` か `docker compose up -d` を使う。
 
+SQL Server を Web で触るなら（推奨）:
+
+```bash
+docker compose up -d       # SQL Server + CloudBeaver を起動
+# http://127.0.0.1:8978 でアクセス
+# ログイン: cbadmin / P@ssw0rd123!
+```
+
 LibreOffice Base から触るなら（macOS / Linux）:
 
 ```bash
 npm run lo:setup   # JDK と JDBC ドライバを .tools/ に用意
 npm run lo:base    # 接続設定済みの .odb を作って Base で開く
 ```
+
+> ⚠️ LibreOffice 26 では GUI から開くときに Java 検出エラーが発生する可能性があります。
+> その場合は CloudBeaver を使用してください。詳細は [docs/libreoffice-base.md](docs/libreoffice-base.md#%EF%B8%8Flibreoffice-base-guiでのjava検出エラー既知の制限) を参照。
 
 検証が終わったら `make clean`（または `npm run clean`）で丸ごと消す。
 

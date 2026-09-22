@@ -387,6 +387,60 @@ macOS 側は SQL Server の公式イメージが amd64 のみのため Intel ラ
 - JDK と LibreOffice のアーキテクチャが違う（Intel 版 JDK × arm64 版 LibreOffice など）
 - `jre8` 版の jar を JDK 11 以降で使っている
 
+### ⚠️ LibreOffice Base GUI での Java 検出エラー（既知の制限）
+
+**症状**: `npm run lo:base` で `.odb` ファイル生成に成功しても、Base GUI から開くと「No Java installation could be found」エラー
+
+**原因**: LibreOffice 26.8 の Java フレームワーク検出が環境によって機能しない。設定ファイル編集、環境変数、GUI 設定など複数の方法を試しても解決しないケースがある。
+
+**根本的な解決策はない。** 以下の代替案を使用してください：
+
+1. **CloudBeaver で検証（推奨）**
+   ```bash
+   # CloudBeaver はブラウザベースで Java 設定不要
+   docker compose up -d
+   # http://127.0.0.1:8978 にアクセス
+   # ログイン: cbadmin / P@ssw0rd123!
+   # 左側の接続から SQL Server にアクセス可能
+   ```
+
+2. **`.odb` ファイル生成機能は活用可能**
+   - `npm run lo:base` で生成した `.odb` ファイルは接続設定済み
+   - 他の環境や別ユーザーが開く場合に有用
+
+3. **LibreOffice のバージョンダウン**
+   - v25 以下は Java 統合が比較的安定
+   - `brew install --cask libreoffice@25` でインストール可能
+
+---
+
+## セットアップ完了の確認
+
+以下を実行して、環境が正しくセットアップされているか確認してください：
+
+```bash
+# 1. SQL Server 接続確認
+npm run test:connection
+# 出力: "Connection test passed."
+
+# 2. JDBC / JDK 確認
+npm run lo:setup
+# 出力: "Setup complete."
+
+# 3. `.odb` ファイル生成確認
+npm run lo:base
+# 出力: "✓ Created: AppDB.odb"
+
+# 4. CloudBeaver で検証（推奨）
+docker compose up -d
+sleep 15
+curl -s http://127.0.0.1:8978/api/config/serverInfo | head -5
+# ブラウザで http://127.0.0.1:8978 にアクセス
+# 左側に "SQL Server (sa)" と "SQL Server (app_user)" が表示される
+```
+
+すべて成功すれば **セットアップ完了** です。
+
 ### JDBC: 証明書エラーで接続できない
 
 URL に `trustServerCertificate=true` が入っているか確認する。
