@@ -17,6 +17,55 @@ Sub Emit(sLine As String)
   sOut = sOut &amp; sLine &amp; Chr(10)
 End Sub
 
+REM 接続設定済みの .odb を生成する（scripts/open-base.js から呼ばれる）。
+REM   LO_ODB_PATH : 出力先の .odb パス
+Sub MakeOdb
+  Dim oDB As Object, oDoc As Object
+  Dim sPath As String, sUrl As String, sUser As String, sPass As String, sClass As String
+  Dim nInfo As Integer
+
+  sOut = ""
+  sPath  = Environ("LO_ODB_PATH")
+  sUrl   = Environ("LO_TEST_URL")
+  sUser  = Environ("LO_TEST_USER")
+  sPass  = Environ("LO_TEST_PASS")
+  sClass = Environ("LO_TEST_DRIVERCLASS")
+
+  On Error Goto OdbFail
+
+  oDB = createUnoService("com.sun.star.sdb.DatabaseContext").createInstance()
+  oDB.URL = sUrl
+  oDB.User = sUser
+  oDB.IsPasswordRequired = False
+
+  nInfo = 1
+  If sClass &lt;&gt; "" Then nInfo = nInfo + 1
+  Dim aInfo(nInfo - 1) As New com.sun.star.beans.PropertyValue
+  aInfo(0).Name = "password" : aInfo(0).Value = sPass
+  If sClass &lt;&gt; "" Then
+    aInfo(1).Name = "JavaDriverClass" : aInfo(1).Value = sClass
+  End If
+  oDB.Info = aInfo()
+
+  oDoc = oDB.DatabaseDocument
+  oDoc.storeAsURL(ConvertToURL(sPath), Array())
+  Emit("ODB: " &amp; sPath)
+  Emit("RESULT: SUCCESS")
+  Goto OdbDone
+
+OdbFail:
+  Emit("EXCEPTION: err=" &amp; Err &amp; " " &amp; Error$ &amp; " (line " &amp; Erl &amp; ")")
+  Emit("RESULT: FAILED")
+
+OdbDone:
+  Dim sOutPath As String, iOdbFile As Integer
+  sOutPath = Environ("LO_TEST_OUT")
+  iOdbFile = Freefile
+  Open sOutPath For Output As #iOdbFile
+  Print #iOdbFile, sOut
+  Close #iOdbFile
+End Sub
+
 Sub RunTest
   Dim oDM As Object, oConn As Object, oMeta As Object, oStmt As Object, oRS As Object
   Dim sUrl As String, sUser As String, sPass As String, sClass As String, sCharSet As String

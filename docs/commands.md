@@ -78,11 +78,20 @@ npm run test:isolation    # 分離レベルテスト
 npm run test              # 基本テスト実行（up → wait → init → verify）
 npm run ci                # CI用（テスト後にクリーンアップ）
 
-npm run test:libreoffice  # LibreOffice Base からの接続テスト（要 LO_TEST_URL）
 ```
 
-`test:libreoffice` は LibreOffice をヘッドレス起動して接続を検証する。
-環境変数の指定が必要なので [libreoffice-base.md の自動テスト](libreoffice-base.md#自動テスト) を参照。
+### LibreOffice Base からの接続検証
+
+```bash
+npm run lo:setup            # JDK と JDBC ドライバを .tools/ に用意（sudo 不要）
+npm run lo:test             # ヘッドレスで接続・読み書きを検証（JDBC）
+npm run lo:test -- --odbc   # 同上（ODBC / 要DSN）
+npm run lo:base             # 接続設定済みの AppDB.odb を作って Base で開く
+npm run lo:base -- --odbc   # 同上（ODBC / 要DSN）
+```
+
+`lo:test` は `test:libreoffice`（CI から呼ぶ名前）と同じもの。
+詳細は [libreoffice-base.md](libreoffice-base.md) を参照。
 
 ### データ生成
 

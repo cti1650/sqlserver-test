@@ -23,6 +23,36 @@ Windows / macOS で手順が共通になるのも利点。
 
 ---
 
+## すぐ試す（macOS / Linux）
+
+JDK と JDBC ドライバの用意から Base の起動まで、コマンドで完結する。
+LibreOffice 本体（`brew install --cask libreoffice`）と起動中の SQL Server だけ用意しておく。
+
+```bash
+npm run lo:setup   # JDK と JDBC ドライバを .tools/ に用意する（sudo 不要）
+npm run lo:test    # ヘッドレスで接続・読み書きを検証する
+npm run lo:base    # 接続設定済みの AppDB.odb を作って Base で開く
+```
+
+`npm run lo:base` が作る `AppDB.odb` は接続先・ユーザー・パスワードまで設定済みなので、
+Base の接続ウィザードを手で埋める必要はない。左の「テーブル」に `M_Customer` などが
+並べば接続成功。
+
+ODBC 側を試したい場合は `-- --odbc` を付ける（DSN は[後述の手順](#odbc-で接続するmacos)で先に作る）。
+
+```bash
+npm run lo:test -- --odbc
+npm run lo:base -- --odbc
+```
+
+> `.tools/` と `*.odb` は `.gitignore` 済み。リポジトリを消せばツールも消える。
+> `AppDB.odb` にはパスワードが平文で入るので、検証用途以外では共有しないこと。
+
+以下は、この自動化が何をやっているかの手動手順。
+Windows や、GUI から自分で設定したい場合はこちらを参照する。
+
+---
+
 ## JDBC で接続する（推奨）
 
 ### 1. JDK を入れる
@@ -250,40 +280,41 @@ iODBC の ANSI API は SQL 文テキストを必ずワイド文字版に変換�
 
 ## 自動テスト
 
-LibreOffice をヘッドレスで起動し、Base と同じ SDBC 経由で接続・読み書きを検証できる。
+LibreOffice をヘッドレスで起動し、Base と同じ SDBC 経由で接続・読み書きを検証する。
+検証内容は 接続 → メタデータ取得 → テーブル一覧 → SELECT → パラメータ経由の
+INSERT / DELETE → 日本語の書き込み。
 
 ```bash
-# ODBC（DSN は事前に作っておく）
-LO_TEST_URL="sdbc:odbc:SQLServerTest" npm run test:libreoffice
-
-# JDBC
-export JAVA_HOME=/path/to/jdk
-export CLASSPATH=/path/to/mssql-jdbc-13.6.0.jre11.jar
-export UNO_JAVA_JFW_ENV_JREHOME=1
-export UNO_JAVA_JFW_ENV_CLASSPATH=1
-LO_TEST_URL="jdbc:sqlserver://127.0.0.1:1433;databaseName=AppDB;encrypt=true;trustServerCertificate=true" \
-LO_TEST_DRIVERCLASS="com.microsoft.sqlserver.jdbc.SQLServerDriver" \
-LO_TEST_REQUIRE_JP=1 \
-npm run test:libreoffice
+npm run lo:test              # JDBC（.tools/ の JDK とドライバを自動で使う）
+npm run lo:test -- --odbc    # ODBC（DSN は事前に作っておく）
 ```
 
-検証内容は 接続 → メタデータ取得 → テーブル一覧 → SELECT → パラメータ経由の
-INSERT / DELETE → 日本語の書き込み。実体は下記の 2 ファイル。
+構成ファイル:
 
-- `ci/libreoffice/ConnTest.xba` — LibreOffice Basic マクロ
-- `scripts/test-libreoffice.js` — マクロをプロファイルに配置して headless 実行するハーネス
+| ファイル | 役割 |
+|---------|------|
+| `ci/libreoffice/ConnTest.xba` | 接続検証マクロ（`RunTest`）と .odb 生成マクロ（`MakeOdb`） |
+| `scripts/lo-common.js` | パス解決・環境変数の組み立て・マクロ配置 |
+| `scripts/setup-libreoffice.js` | `lo:setup` の実体 |
+| `scripts/test-libreoffice.js` | `lo:test` の実体 |
+| `scripts/open-base.js` | `lo:base` の実体 |
+
+明示的に指定したい場合は環境変数で上書きできる。
 
 | 環境変数 | 説明 |
 |---------|------|
-| `LO_TEST_URL` | 接続 URL（必須） |
-| `LO_TEST_DRIVERCLASS` | JDBC ドライバークラス（JDBC 時のみ） |
+| `LO_TEST_URL` | 接続 URL。指定するとドライバの自動判定より優先される |
+| `LO_TEST_DRIVERCLASS` | JDBC ドライバークラス |
 | `LO_TEST_USER` / `LO_TEST_PASS` | 既定は `app_user` / `AppUserP@ss123!` |
 | `LO_TEST_CHARSET` | `CharSet` 接続プロパティ（任意） |
 | `LO_TEST_REQUIRE_JP` | `1` で日本語書き込みの成功も必須にする |
+| `LO_ODBC_DSN` | ODBC 時の DSN 名（既定 `SQLServerTest`） |
 | `SOFFICE` | soffice 実行ファイルのパス（自動検出を上書き） |
+| `JAVA_HOME` / `CLASSPATH` | 指定すると `.tools/` より優先される（CI はこの経路） |
 
 > マクロは LibreOffice のユーザープロファイルの Standard ライブラリに
 > `ConnTest` モジュールとして配置される。既存のモジュールは残す。
+> 起動済みの LibreOffice があると設定を読み直さないため、実行前に終了させる。
 
 ### CI
 
