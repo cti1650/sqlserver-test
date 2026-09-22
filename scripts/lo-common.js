@@ -99,6 +99,9 @@ function javaEnv() {
     // LibreOffice の Java フレームワークに GUI 設定ではなく環境変数を使わせる
     UNO_JAVA_JFW_ENV_JREHOME: '1',
     UNO_JAVA_JFW_ENV_CLASSPATH: '1',
+    // JVM ヒープサイズを明示的に設定（LibreOffice の大量メモリ使用に対応）
+    // これらは LibreOffice が JVM を起動するときに使用する
+    _JAVA_OPTIONS: '-Xmx512m',  // 最大ヒープサイズ 512MB
   };
 }
 

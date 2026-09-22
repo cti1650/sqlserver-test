@@ -336,6 +336,32 @@ macOS 側は SQL Server の公式イメージが amd64 のみのため Intel ラ
 
 ## トラブルシューティング
 
+### Base が起動時にクラッシュ（Java GC Thread エラー）
+
+**症状**: LibreOffice が起動直後に「Abort trap: 6」で落ちる、またはメモリエラーで落ちる。
+
+**原因**: JVM のヒープメモリ不足。LibreOffice は JDBC 経由で大量のメモリを使用します。
+
+**対応**:
+
+1. **JVM ヒープサイズを増やす** — `lo:setup` から再度実行すると `_JAVA_OPTIONS=-Xmx512m` が設定されます
+   ```bash
+   npm run lo:setup
+   ```
+
+2. **LibreOffice の Java メモリ設定を確認**
+   - Tools > Options > LibreOffice > Java
+   - Java が**有効**か確認
+   - JDK パスが正しいか確認
+   - メモリ設定があれば、さらに増やす（1GB 以上推奨）
+
+3. **再度 Base を起動**
+   ```bash
+   npm run lo:base
+   ```
+
+マシンのメモリが十分（8GB 以上）でも、JVM に割り当てるヒープが小さすぎるとクラッシュします。
+
 ### JDBC: 「クラスのテスト」で失敗する
 
 - jar をクラスパスに追加した後 LibreOffice を再起動していない
